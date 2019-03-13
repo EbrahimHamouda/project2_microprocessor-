@@ -1,0 +1,193 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         
+    2 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+    3 00000000                 EXPORT           __main
+    4 00000000         
+    5 00000000         __main
+    6 00000000         
+    7 00000000         ; accesing SYSCTL_RCGC2_R location 
+    8 00000000 F04F 4080       mov              r0,#0x40000000
+    9 00000004 F44F 2170       mov              r1,#0x0f0000
+   10 00000008 EA41 0100       ORR              r1,r1,r0
+   11 0000000C F44F 4061       mov              r0,#0xe100
+   12 00000010 EA41 0100       ORR              r1,r1,r0
+   13 00000014 F04F 0008       mov              r0,#0x08
+   14 00000018 EA41 0100       ORR              r1,r1,r0
+   15 0000001C         
+   16 0000001C         ; set port f clock 0x20 
+   17 0000001C F04F 0020       mov              r0,#0x20
+   18 00000020 6008            STR              r0,[r1,#0x00]
+   19 00000022 F04F 0000       mov              r0,#0x00
+   20 00000026         ; wait 8 cycle to make clock work
+   21 00000026 BF00            NOP
+   22 00000028 BF00            NOP
+   23 0000002A BF00            NOP
+   24 0000002C BF00            NOP
+   25 0000002E BF00            NOP
+   26 00000030 BF00            NOP
+   27 00000032 BF00            NOP
+   28 00000034 BF00            NOP
+   29 00000036         ;make r12 offest of the portf
+   30 00000036 F04F 4080       MOV              r0,#0x40000000
+   31 0000003A F44F 3C00       mov              r12,#0x020000
+   32 0000003E EA4C 0C00       ORR              r12,r12,r0
+   33 00000042 F44F 40A0       mov              r0,#0x5000
+   34 00000046 EA4C 0C00       ORR              r12,r12,r0
+   35 0000004A         ;open lock rigister GPIO_PORTF_LOCK_R 
+   36 0000004A F04F 4098       mov              r0,#0x4c000000
+   37 0000004E F44F 019E       mov              r1,#0x4f0000
+   38 00000052 EA41 0100       ORR              r1,r1,r0
+   39 00000056 F44F 4086       mov              r0,#0x4300
+   40 0000005A EA41 0100       ORR              r1,r1,r0
+   41 0000005E F04F 004B       mov              r0,#0x4b
+   42 00000062 EA41 0100       ORR              r1,r1,r0
+   43 00000066 F8CC 1520       STR              r1,[r12,#0x520]
+   44 0000006A         ;enable changes on portf 
+   45 0000006A F04F 001F       mov              r0,#0x1f
+   46 0000006E F8CC 0524       str              r0,[r12,#0x524]
+   47 00000072         ;set dircation pf4,pf0 input , pf1,pf2,pf3 output
+   48 00000072 F04F 000E       mov              r0,#0x0e    ;0 means input 1 me
+                                                            an output
+   49 00000076 F8CC 0400       str              r0,[r12,#0x400]
+   50 0000007A         ;enable pull-up input pf4,pf1
+   51 0000007A F04F 0011       mov              r0,#0x11
+   52 0000007E F8CC 0510       str              r0,[r12,#0x510]
+   53 00000082         ;enable digital pins pf0:pf4
+   54 00000082 F04F 001F       mov              r0,#0x1f
+   55 00000086 F8CC 051C       str              r0,[r12,#0x51c]
+   56 0000008A         
+   57 0000008A         ;store the possable conditions
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   58 0000008A F04F 0100       mov              r1,#0x00    ; 2switch on >> blu
+                                                            e
+   59 0000008E F04F 0201       mov              r2,#0x01    ; sw1 on >> red 
+   60 00000092 F04F 0310       mov              r3,#0x10    ; sw2 on >> green
+   61 00000096 F04F 0411       mov              r4,#0x11    ; 2switch off >> da
+                                                            rk 
+   62 0000009A         
+   63 0000009A         
+   64 0000009A         loop
+   65 0000009A         ;read pf4,pf
+   66 0000009A F8DC 03FC       ldr              r0,[r12,#0x3FC] 
+                                                            ; read gpio_data
+   67 0000009E F000 0011       and              r0,#0x11    ; masking 
+   68 000000A2 4288            cmp              r0,r1
+   69 000000A4 D014            BEQ              blue
+   70 000000A6         
+   71 000000A6 4290            cmp              r0,r2
+   72 000000A8 D008            BEQ              red
+   73 000000AA         
+   74 000000AA 4298            cmp              r0,r3
+   75 000000AC D00B            BEQ              green
+   76 000000AE         
+   77 000000AE 42A0            cmp              r0,r4
+   78 000000B0 D0FF            BEQ              dark
+   79 000000B2         
+   80 000000B2         dark
+   81 000000B2 F04F 0000       mov              r0,#0x00    ; dark
+   82 000000B6 F8CC 03FC       str              r0,[r12,#0x3FC]
+   83 000000BA E7EE            B                loop
+   84 000000BC         
+   85 000000BC         red
+   86 000000BC F04F 0002       mov              r0,#0x02    ; red
+   87 000000C0 F8CC 03FC       str              r0,[r12,#0x3FC]
+   88 000000C4 E7E9            B                loop
+   89 000000C6         
+   90 000000C6         green
+   91 000000C6 F04F 0008       mov              r0,#0x08    ; green
+   92 000000CA F8CC 03FC       str              r0,[r12,#0x3FC]
+   93 000000CE E7E4            B                loop
+   94 000000D0         
+   95 000000D0         blue
+   96 000000D0 F04F 0004       mov              r0,#0x04    ; blue
+   97 000000D4 F8CC 03FC       str              r0,[r12,#0x3FC]
+   98 000000D8 E7DF            B                loop
+   99 000000DA         
+  100 000000DA                 END
+Command Line: --debug --xref --cpu=Cortex-M4 --apcs=interwork --depend=.\main.d
+ -o.\main.o -IC:\Keil\ARM\RV31\INC -IC:\Keil\ARM\CMSIS\Include -IC:\Keil\ARM\In
+c\Luminary --predefine="__EVAL SETA 1" --list=.\main.lst main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 2 in file main.s
+   Uses
+      None
+Comment: .text unused
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 5 in file main.s
+   Uses
+      At line 3 in file main.s
+Comment: __main used once
+blue 000000D0
+
+Symbol: blue
+   Definitions
+      At line 95 in file main.s
+   Uses
+      At line 69 in file main.s
+Comment: blue used once
+dark 000000B2
+
+Symbol: dark
+   Definitions
+      At line 80 in file main.s
+   Uses
+      At line 78 in file main.s
+Comment: dark used once
+green 000000C6
+
+Symbol: green
+   Definitions
+      At line 90 in file main.s
+   Uses
+      At line 75 in file main.s
+Comment: green used once
+loop 0000009A
+
+Symbol: loop
+   Definitions
+      At line 64 in file main.s
+   Uses
+      At line 83 in file main.s
+      At line 88 in file main.s
+      At line 93 in file main.s
+      At line 98 in file main.s
+
+red 000000BC
+
+Symbol: red
+   Definitions
+      At line 85 in file main.s
+   Uses
+      At line 72 in file main.s
+Comment: red used once
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+7 symbols
+338 symbols in table
